@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <meta name="description" content="Google Maps Engine API Web Client">  
+    <meta name="version" content="beta0.1">
+    <meta name="author" content="guilherme.pires@gmail.com">   
+	<head>		
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%; }
+		</style>		
+		<script src='https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.js'></script>
+		<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.css' rel='stylesheet' />
+		<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+	</head>
+	<body>
+		<div id="map"></div>
+		<script type="text/javascript">
+			var map = L.mapbox.map('map', 'guilhermepires.map-g1npb623', {
+				center : [39.55911824217184, -8.0859375],
+				zoom : 7,
+				maxZoom : 19,
+				minZoom : 7
+			});
+			
+				map.addControl(L.mapbox.geocoderControl('guilhermepires.map-g1npb623', {
+					keepOpen: false
+				}));
+				
+				map.on('click', function(e) {
+					georeference(e.latlng);
+				});
+				
+			georeference = function(latlng)	{
+				var url = "/requests";
+				var data = {
+								"timestamp" : Date.now() / 1000, 
+								"position" : [latlng.lat , latlng.lng]
+							}
+				doPostRequest(url , data);
+			}
+			
+			doPostRequest = function (url, data){
+				$.ajax({
+				  type: "POST",
+				  url: url,
+				  data: data,
+				  success: function(response){
+						console.log("ALL OK!");
+				  },
+				  dataType: "json"
+				});
+			}
+				
+		</script>
+	</body>
+</html>

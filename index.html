@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <meta name="description" content="Google Maps Engine API Web Client">  
+    <meta name="version" content="beta0.1">
+    <meta name="author" content="guilherme.pires@gmail.com">   
+	<head>		
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%; }
+		</style>		
+		<script src='https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.js'></script>
+		<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.css' rel='stylesheet' />
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+		
+	</head>
+	<body>
+		<div id="map"></div>
+		<script type="text/javascript">
+			var io = io.connect();
+			io.emit("ready");
+			
+			var map = L.mapbox.map('map', 'guilhermepires.map-g1npb623', {
+				center : [39.55911824217184, -8.0859375],
+				zoom : 7,
+				maxZoom : 19,
+				minZoom : 7
+			});
+		
+				map.addControl(L.mapbox.geocoderControl('guilhermepires.map-g1npb623', {
+					keepOpen: false
+				}));
+				
+			var featureGroup = L.featureGroup().addTo(map);
+			
+			var activeMarker = null;
+
+				/*
+				map.on('click', function(e) {
+					georeference(e.latlng);
+				});
+				
+				
+			georeference = function(latlng)	{
+				var url = "/requests";
+				var data = {
+								"timestamp" : Date.now(), 
+								"position" : [latlng.lat , latlng.lng]
+							}
+				doPostRequest(url , data);
+			}
+			
+			doPostRequest = function (url, data){
+				$.ajax({
+				  type: "POST",
+				  url: url,
+				  data: data,
+				  success: function(response){
+						console.log("ALL OK!");
+				  },
+				  dataType: "json"
+				});
+			}
+			*/
+			
+			
+			var devices = {
+				"54d74be79098aee7" : 
+					{
+						"name" : "Miguel",
+						"color" : "white"
+					}, 
+				"8bc034ed6cc22284" : 
+					{
+						"name" : "Nuno",
+						"color" : "gray"
+					}, 
+				"fb6ca655b39ee8fc" : 
+					{
+						"name" : "EDP #1",
+						"color" : "Red"
+					}, 
+				"cd9b51fc04510160" : 
+					{
+						"name" : "EDP #2",
+						"color" : "MediumTurquoise"
+					}, 
+				"441efd544a43073e" : 
+					{
+						"name" : "EDP #3",
+						"color" : "DeepPink"
+					},
+				"54bef66f8a618ca5" : 
+					{
+						"name" : "EDP #4",
+						"color" : "Lime"
+					}		
+			};
+			
+
+
+			$.get("/requests", function(response){
+				if(response != null && response.length > 0){
+					for(var i = 0 ; i < response.length ; i++){
+						var request = response[i];
+						//Determine what device is
+						var device = devices[request.Device_id]; 
+						if(device == undefined){
+							device = {"name" : "unknown" , "color" : "DeepSkyBlue"};
+						}
+						
+						var dateParser = new Date(parseInt(request.timestamp) * 1000);
+						var fullYear = dateParser.getFullYear();
+						var month = dateParser.getMonth() + 1;
+						var date = dateParser.getDate();
+						var hours = dateParser.getHours();						
+						var minutes = dateParser.getMinutes();
+						var seconds = dateParser.getSeconds();												
+						var realDate = fullYear + "-" + month + "-" + date + " T " + hours + ":" + minutes + ":" + seconds;
+						
+						//Set content for popup
+						var popup = L.popup().setContent(device.name + " @ " + realDate);
+					
+						//Differentiate marker
+						var pathOptions = {
+							opacity: 0,         // Stroke opacity
+							fillColor: device.color,  // Fill color
+							fillOpacity: 0.3,    // Fill opacity
+							radius: 8
+						};	
+					
+						//Put marker and attach popup
+						activeMarker = L.circleMarker(request.position, pathOptions).addTo(featureGroup);
+						activeMarker.bindPopup(popup);
+					}
+				}
+			});
+			
+			io.on('newRequest', function(data){
+				/*
+				L.marker(data.position, {
+					icon: L.mapbox.marker.icon({
+						'marker-size': 'large',
+						'marker-symbol': 'marker',
+						'marker-color': '#fa0'
+					})
+				}).addTo(map);
+				*/
+				
+				var device = devices[data.Device_id]; 
+				if(device == undefined){
+							device = {"name" : "unknown" , "color" : "DeepSkyBlue"};
+					}
+				
+				var dateParser = new Date(parseInt(data.timestamp) * 1000);
+				var fullYear = dateParser.getFullYear();
+				var month = dateParser.getMonth() + 1;
+				var date = dateParser.getDate();
+				var hours = dateParser.getHours();						
+				var minutes = dateParser.getMinutes();
+				var seconds = dateParser.getSeconds();												
+				var realDate = fullYear + "-" + month + "-" + date + " T " + hours + ":" + minutes + ":" + seconds;
+				
+				//Set content for popup
+				var popup = L.popup().setContent(device.name + " @ " + realDate);
+			
+				//Differentiate marker
+				var pathOptions = {
+					opacity: 0,         // Stroke opacity
+					//fillColor: "Gold",  // Fill color
+					fillColor: device.color,  // Fill color
+					fillOpacity: 0.9,    // Fill opacity
+					radius: 10
+				};	
+				
+				//Put marker and attach popup	
+				if(activeMarker != null){				
+					activeMarker.setRadius(8);
+					activeMarker.setStyle({"fillOpacity" : 0.3, "fillColor" : device.color});
+				}
+				
+				activeMarker = L.circleMarker(data.position, pathOptions).addTo(featureGroup);
+				activeMarker.bindPopup(popup);
+				
+			});		
+		</script>
+	</body>
+</html>
